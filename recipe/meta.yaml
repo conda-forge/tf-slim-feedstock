@@ -1,17 +1,24 @@
-{% set name = "TF-slim" %}
-{% set version = "0.1" %}
+{% set name = "tf_slim" %}
+{% set version = "1.0" %}
+{% set pyver = "py2.py3" %}
+
+{% set fn = "{}-{}-{}-none-any.whl".format(name, version, pyver) %}
 
 package:
   name: {{ name|lower }}
   version: {{ version }}
 source:
-  url: https://github.com/Maxar-Corp/ratpac/releases/download/slim-{{ version }}/{{ name }}-{{ version }}.tar.gz
-  sha256: cca9308a93f99331641febbe53c19e8fdf845306250df0cf07ac340b5e0deda9
+  fn: {{ fn }}
+
+  url: https://pypi.io/packages/{{ pyver }}/t/{{ name }}/{{ fn }}
+  sha256: d9b23a8efb09bca7a290007cfb21fd81765eacb076597b287ff16e652c12809b
 
 build:
+  noarch: python
   number: 0
-  skip: true  # [win]  # Skip all windows for now due to numpy/scipy version pinning issues
-  script: "{{ PYTHON }} -m pip install . -vv"
+  #skip: #true  # [win]  # Skip all windows for now due to numpy/scipy version pinning issues
+  #script: "{{ PYTHON }} -m pip install . -vv"
+  script: pip install --no-deps {{ fn }}
 
 requirements:
   host:
@@ -38,7 +45,7 @@ about:
   license: Apache 2.0
   license_family: Apache
   license_file: LICENSE
-  summary: ' TF-slim is a lightweight high-level API of TensorFlow for defining, training and evaluating complex models'
+  summary: 'TF-Slim: A framework for flexible Reinforcement Learning research'
 
   description: |
     TF-slim is a new lightweight high-level API of TensorFlow
@@ -51,5 +58,3 @@ about:
 extra:
   recipe-maintainers:
     - adbeda
-    - agcopenhaver
-    - tata17
