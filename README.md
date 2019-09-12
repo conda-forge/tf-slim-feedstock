@@ -1,4 +1,4 @@
-About tf-slim
+About tf_slim
 =============
 
 Home: https://github.com/Maxar-Corp/ratpac/tree/tf_slim/TF-slim
@@ -20,74 +20,13 @@ Current build status
 ====================
 
 
-<table>
-    
-  <tr>
-    <td>Azure</td>
+<table><tr><td>All platforms:</td>
     <td>
-      <details>
-        <summary>
-          <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=6999&branchName=master">
-            <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/tf-slim-feedstock?branchName=master">
-          </a>
-        </summary>
-        <table>
-          <thead><tr><th>Variant</th><th>Status</th></tr></thead>
-          <tbody><tr>
-              <td>linux_python2.7</td>
-              <td>
-                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=6999&branchName=master">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/tf-slim-feedstock?branchName=master&jobName=linux&configuration=linux_python2.7" alt="variant">
-                </a>
-              </td>
-            </tr><tr>
-              <td>linux_python3.6</td>
-              <td>
-                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=6999&branchName=master">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/tf-slim-feedstock?branchName=master&jobName=linux&configuration=linux_python3.6" alt="variant">
-                </a>
-              </td>
-            </tr><tr>
-              <td>linux_python3.7</td>
-              <td>
-                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=6999&branchName=master">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/tf-slim-feedstock?branchName=master&jobName=linux&configuration=linux_python3.7" alt="variant">
-                </a>
-              </td>
-            </tr><tr>
-              <td>osx_python2.7</td>
-              <td>
-                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=6999&branchName=master">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/tf-slim-feedstock?branchName=master&jobName=osx&configuration=osx_python2.7" alt="variant">
-                </a>
-              </td>
-            </tr><tr>
-              <td>osx_python3.6</td>
-              <td>
-                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=6999&branchName=master">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/tf-slim-feedstock?branchName=master&jobName=osx&configuration=osx_python3.6" alt="variant">
-                </a>
-              </td>
-            </tr><tr>
-              <td>osx_python3.7</td>
-              <td>
-                <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=6999&branchName=master">
-                  <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/tf-slim-feedstock?branchName=master&jobName=osx&configuration=osx_python3.7" alt="variant">
-                </a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </details>
+      <a href="https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=6999&branchName=master">
+        <img src="https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/tf-slim-feedstock?branchName=master">
+      </a>
     </td>
   </tr>
-  <tr>
-    <td>Windows</td>
-    <td>
-      <img src="https://img.shields.io/badge/Windows-disabled-lightgrey.svg" alt="Windows disabled">
-    </td>
-  </tr>
-![ppc64le disabled](https://img.shields.io/badge/ppc64le-disabled-lightgrey.svg)
 </table>
 
 Current release info
@@ -95,27 +34,27 @@ Current release info
 
 | Name | Downloads | Version | Platforms |
 | --- | --- | --- | --- |
-| [![Conda Recipe](https://img.shields.io/badge/recipe-tf--slim-green.svg)](https://anaconda.org/conda-forge/tf-slim) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/tf-slim.svg)](https://anaconda.org/conda-forge/tf-slim) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/tf-slim.svg)](https://anaconda.org/conda-forge/tf-slim) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/tf-slim.svg)](https://anaconda.org/conda-forge/tf-slim) |
+| [![Conda Recipe](https://img.shields.io/badge/recipe-tf_slim-green.svg)](https://anaconda.org/conda-forge/tf_slim) | [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/tf_slim.svg)](https://anaconda.org/conda-forge/tf_slim) | [![Conda Version](https://img.shields.io/conda/vn/conda-forge/tf_slim.svg)](https://anaconda.org/conda-forge/tf_slim) | [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/tf_slim.svg)](https://anaconda.org/conda-forge/tf_slim) |
 
-Installing tf-slim
+Installing tf_slim
 ==================
 
-Installing `tf-slim` from the `conda-forge` channel can be achieved by adding `conda-forge` to your channels with:
+Installing `tf_slim` from the `conda-forge` channel can be achieved by adding `conda-forge` to your channels with:
 
 ```
 conda config --add channels conda-forge
 ```
 
-Once the `conda-forge` channel has been enabled, `tf-slim` can be installed with:
+Once the `conda-forge` channel has been enabled, `tf_slim` can be installed with:
 
 ```
-conda install tf-slim
+conda install tf_slim
 ```
 
-It is possible to list all of the versions of `tf-slim` available on your platform with:
+It is possible to list all of the versions of `tf_slim` available on your platform with:
 
 ```
-conda search tf-slim --channel conda-forge
+conda search tf_slim --channel conda-forge
 ```
 
 
@@ -157,17 +96,17 @@ Terminology
                   produce the finished article (built conda distributions)
 
 
-Updating tf-slim-feedstock
+Updating tf_slim-feedstock
 ==========================
 
-If you would like to improve the tf-slim recipe or build a new
+If you would like to improve the tf_slim recipe or build a new
 package version, please fork this repository and submit a PR. Upon submission,
 your changes will be run on the appropriate platforms to give the reviewer an
 opportunity to confirm that the changes result in a successful build. Once
 merged, the recipe will be re-built and uploaded automatically to the
 `conda-forge` channel, whereupon the built conda packages will be available for
 everybody to install and use from the `conda-forge` channel.
-Note that all branches in the conda-forge/tf-slim-feedstock are
+Note that all branches in the conda-forge/tf_slim-feedstock are
 immediately built and any created packages are uploaded, so PRs should be based
 on branches in forks and branches in the main repository should only be used to
 build distinct package versions.
