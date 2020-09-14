@@ -9,7 +9,6 @@ package:
   version: {{ version }}
 source:
   fn: {{ fn }}
-
   url: https://pypi.io/packages/{{ pyver }}/t/{{ name }}/{{ fn }}
   sha256: fa2bab63b3925bd42601102e7f178dce997f525742596bf404fa8a6918e146ff
 
@@ -46,7 +45,6 @@ about:
   license_family: Apache
   license_file: LICENSE
   summary: 'TF-Slim: A framework for flexible Reinforcement Learning research'
-
   description: |
     TF-slim is a new lightweight high-level API of TensorFlow
     for defining, training and evaluating complex models. This
