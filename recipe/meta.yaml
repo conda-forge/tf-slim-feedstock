@@ -11,7 +11,7 @@ source:
   fn: {{ fn }}
 
   url: https://pypi.io/packages/{{ pyver }}/t/{{ name }}/{{ fn }}
-  sha256: d9b23a8efb09bca7a290007cfb21fd81765eacb076597b287ff16e652c12809b
+  sha256: fa2bab63b3925bd42601102e7f178dce997f525742596bf404fa8a6918e146ff
 
 build:
   noarch: python
