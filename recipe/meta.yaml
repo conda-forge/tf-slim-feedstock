@@ -1,5 +1,5 @@
 {% set name = "tf_slim" %}
-{% set version = "1.0" %}
+{% set version = "1.1.0" %}
 {% set pyver = "py2.py3" %}
 
 {% set fn = "{}-{}-{}-none-any.whl".format(name, version, pyver) %}
@@ -9,13 +9,12 @@ package:
   version: {{ version }}
 source:
   fn: {{ fn }}
-
   url: https://pypi.io/packages/{{ pyver }}/t/{{ name }}/{{ fn }}
-  sha256: d9b23a8efb09bca7a290007cfb21fd81765eacb076597b287ff16e652c12809b
+  sha256: fa2bab63b3925bd42601102e7f178dce997f525742596bf404fa8a6918e146ff
 
 build:
   noarch: python
-  number: 1
+  number: 0
   #skip: #true  # [win]  # Skip all windows for now due to numpy/scipy version pinning issues
   #script: "{{ PYTHON }} -m pip install . -vv"
   script: pip install --no-deps {{ fn }}
@@ -46,7 +45,6 @@ about:
   license_family: Apache
   license_file: LICENSE
   summary: 'TF-Slim: A framework for flexible Reinforcement Learning research'
-
   description: |
     TF-slim is a new lightweight high-level API of TensorFlow
     for defining, training and evaluating complex models. This
@@ -60,3 +58,4 @@ extra:
     - adbeda
     - rluria14
     - oblute
+    - ndmaxar
