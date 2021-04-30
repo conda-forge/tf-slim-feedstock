@@ -14,7 +14,7 @@ source:
 
 build:
   noarch: python
-  number: 0
+  number: 1
   #skip: #true  # [win]  # Skip all windows for now due to numpy/scipy version pinning issues
   #script: "{{ PYTHON }} -m pip install . -vv"
   script: pip install --no-deps {{ fn }}
@@ -55,6 +55,7 @@ about:
 
 extra:
   recipe-maintainers:
+    - mxr-conda
     - adbeda
     - rluria14
     - oblute
