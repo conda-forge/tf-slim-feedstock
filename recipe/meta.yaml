@@ -22,7 +22,7 @@ requirements:
     - setuptools
   run:
     - python
-    - tensorflow >=1.12.0
+    - tensorflow >=2
 
 test:
   imports:
