@@ -1,23 +1,19 @@
-{% set name = "tf_slim" %}
 {% set version = "1.1.0" %}
-{% set pyver = "py2.py3" %}
-
-{% set fn = "{}-{}-{}-none-any.whl".format(name, version, pyver) %}
 
 package:
-  name: {{ name|lower }}
+  name: tf_slim
   version: {{ version }}
 source:
-  fn: {{ fn }}
-  url: https://pypi.io/packages/{{ pyver }}/t/{{ name }}/{{ fn }}
-  sha256: fa2bab63b3925bd42601102e7f178dce997f525742596bf404fa8a6918e146ff
+  url: https://github.com/google-research/tf-slim/archive/refs/heads/r{{ version }}.zip
+  sha256: f9f6f04c9852bd6bc76bc11e1090ae44ff1dea31a5d7ef4f5feeaa20ae55cdb2
+  patches:
+    # https://github.com/google-research/tf-slim/pull/21
+    - 21-avoid_layer_apply.patch
 
 build:
   noarch: python
-  number: 1
-  #skip: #true  # [win]  # Skip all windows for now due to numpy/scipy version pinning issues
-  #script: "{{ PYTHON }} -m pip install . -vv"
-  script: pip install --no-deps {{ fn }}
+  number: 2
+  script: {{ PYTHON }} -m pip install . -vv
 
 requirements:
   host:
