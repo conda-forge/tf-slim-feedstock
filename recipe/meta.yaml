@@ -9,6 +9,8 @@ source:
   patches:
     # https://github.com/google-research/tf-slim/pull/21
     - 21-avoid_layer_apply.patch
+    # https://github.com/google-research/tf-slim/commit/550196c9db2b76d9e23bc394f4dd02df78159a6a
+    - numpy_123_comaptibility.patch
 
 build:
   noarch: python
