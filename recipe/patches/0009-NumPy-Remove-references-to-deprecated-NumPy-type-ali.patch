@@ -1,0 +1,41 @@
+From ee0a7611e85bd41834550222b6da8206ddb8ccf0 Mon Sep 17 00:00:00 2001
+From: Peter Hawkins <phawkins@google.com>
+Date: Wed, 14 Dec 2022 16:38:03 -0800
+Subject: [PATCH 09/30] [NumPy] Remove references to deprecated NumPy type
+ aliases.
+
+This change replaces references to a number of deprecated NumPy type aliases (np.bool, np.int, np.float, np.complex, np.object, np.str) with their recommended replacement (bool, int, float, complex, object, str).
+
+NumPy 1.24 drops the deprecated aliases, so we must remove uses before updating NumPy.
+
+PiperOrigin-RevId: 495451219
+Change-Id: I7c87c3f78cc55f231f287549e8720f43a06d0758
+---
+ tf_slim/layers/sparse_ops_test.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tf_slim/layers/sparse_ops_test.py b/tf_slim/layers/sparse_ops_test.py
+index 501e693..bc6d116 100644
+--- a/tf_slim/layers/sparse_ops_test.py
++++ b/tf_slim/layers/sparse_ops_test.py
+@@ -86,7 +86,7 @@ class DenseToSparseTensorTest(test.TestCase):
+       st = sparse_ops.dense_to_sparse_tensor([b'qwe', b'', b'ewq', b''])
+       result = sess.run(st)
+     self.assertEqual(result.indices.dtype, np.int64)
+-    self.assertEqual(result.values.dtype, np.object)
++    self.assertEqual(result.values.dtype, object)
+     self.assertEqual(result.dense_shape.dtype, np.int64)
+     self.assertAllEqual([[0], [2]], result.indices)
+     self.assertAllEqual([b'qwe', b'ewq'], result.values)
+@@ -98,7 +98,7 @@ class DenseToSparseTensorTest(test.TestCase):
+           [b'qwe', b'', b'ewq', b''], ignore_value=b'qwe')
+       result = sess.run(st)
+     self.assertEqual(result.indices.dtype, np.int64)
+-    self.assertEqual(result.values.dtype, np.object)
++    self.assertEqual(result.values.dtype, object)
+     self.assertEqual(result.dense_shape.dtype, np.int64)
+     self.assertAllEqual([[1], [2], [3]], result.indices)
+     self.assertAllEqual([b'', b'ewq', b''], result.values)
+-- 
+2.40.1
+

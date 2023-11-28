@@ -1,0 +1,35 @@
+From b189304a31b4e471128e988a3108ee6845a53e31 Mon Sep 17 00:00:00 2001
+From: Sanjoy Das <sanjoy@google.com>
+Date: Wed, 27 Jan 2021 20:59:44 -0800
+Subject: [PATCH 01/30] Internal change.
+
+PiperOrigin-RevId: 354234980
+Change-Id: I5989d83c71236cd88b5cdbf245dbb96c3a36068c
+---
+ pip_pkg.sh       | 2 +-
+ tests_release.sh | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/pip_pkg.sh b/pip_pkg.sh
+index 5caab4e..632cb16 100755
+--- a/pip_pkg.sh
++++ b/pip_pkg.sh
+@@ -1,4 +1,4 @@
+-# Copyright 2020 The TF-Slim Authors.
++# Copyright 2021 The TF-Slim Authors.
+ #
+ # Licensed under the Apache License, Version 2.0 (the "License");
+ # you may not use this file except in compliance with the License.
+diff --git a/tests_release.sh b/tests_release.sh
+index 5c3b5e7..a719d50 100755
+--- a/tests_release.sh
++++ b/tests_release.sh
+@@ -1,4 +1,4 @@
+-# Copyright 2020 The TF-Slim Authors.
++# Copyright 2021 The TF-Slim Authors.
+ #
+ # Licensed under the Apache License, Version 2.0 (the "License");
+ # you may not use this file except in compliance with the License.
+-- 
+2.40.1
+

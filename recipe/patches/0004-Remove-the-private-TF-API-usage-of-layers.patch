@@ -1,0 +1,344 @@
+From 3209e28b6aa4eb7f5fb5c17fef1adc9abb0c1860 Mon Sep 17 00:00:00 2001
+From: Scott Zhu <scottzhu@google.com>
+Date: Mon, 8 Nov 2021 13:03:51 -0800
+Subject: [PATCH 04/30] Remove the private TF API usage of layers.
+
+PiperOrigin-RevId: 408420918
+Change-Id: I6761540a8c724d79612e00c6f4230a7e085ddfb6
+---
+ tf_slim/layers/layers.py             | 41 ++++++++++++----------------
+ tf_slim/layers/rev_block_lib.py      |  5 ++--
+ tf_slim/layers/rev_block_lib_test.py | 39 ++++++++++++--------------
+ 3 files changed, 39 insertions(+), 46 deletions(-)
+
+diff --git a/tf_slim/layers/layers.py b/tf_slim/layers/layers.py
+index 5dd310d..f8cb8e9 100644
+--- a/tf_slim/layers/layers.py
++++ b/tf_slim/layers/layers.py
+@@ -36,12 +36,6 @@ from tensorflow.python.framework import dtypes
+ from tensorflow.python.framework import ops
+ from tensorflow.python.framework import sparse_tensor
+ from tensorflow.python.framework import tensor_shape
+-from tensorflow.python.keras.engine import input_spec
+-from tensorflow.python.layers import base
+-from tensorflow.python.layers import convolutional as convolutional_layers
+-from tensorflow.python.layers import core as core_layers
+-from tensorflow.python.layers import normalization as normalization_layers
+-from tensorflow.python.layers import pooling as pooling_layers
+ from tensorflow.python.ops import array_ops
+ from tensorflow.python.ops import check_ops
+ from tensorflow.python.ops import custom_gradient
+@@ -115,7 +109,7 @@ def avg_pool2d(inputs,
+     inputs = ops.convert_to_tensor(inputs)
+     df = ('channels_first'
+           if data_format and data_format.startswith('NC') else 'channels_last')
+-    layer = pooling_layers.AveragePooling2D(
++    layer = tf.layers.AveragePooling2D(
+         pool_size=kernel_size,
+         strides=stride,
+         padding=padding,
+@@ -164,7 +158,7 @@ def avg_pool3d(inputs,
+     inputs = ops.convert_to_tensor(inputs)
+     df = ('channels_first'
+           if data_format and data_format.startswith('NC') else 'channels_last')
+-    layer = pooling_layers.AveragePooling3D(
++    layer = tf.layers.AveragePooling3D(
+         pool_size=kernel_size,
+         strides=stride,
+         padding=padding,
+@@ -660,7 +654,7 @@ def batch_norm(inputs,
+         param_regularizers = {}
+       beta_regularizer = param_regularizers.get('beta')
+       gamma_regularizer = param_regularizers.get('gamma')
+-      layer = normalization_layers.BatchNormalization(
++      layer = tf.layers.BatchNormalization(
+           axis=axis,
+           momentum=decay,
+           epsilon=epsilon,
+@@ -1056,11 +1050,11 @@ def convolution(inputs,
+       raise ValueError('Convolution expects input with rank %d, got %d' %
+                        (conv_dims + 2, input_rank))
+     if input_rank == 3:
+-      layer_class = convolutional_layers.Convolution1D
++      layer_class = tf.layers.Conv1D
+     elif input_rank == 4:
+-      layer_class = convolutional_layers.Convolution2D
++      layer_class = tf.layers.Conv2D
+     elif input_rank == 5:
+-      layer_class = convolutional_layers.Convolution3D
++      layer_class = tf.layers.Conv3D
+     else:
+       raise ValueError('Convolution not supported for input with rank',
+                        input_rank)
+@@ -1428,7 +1422,7 @@ def convolution2d_transpose(
+ 
+     df = ('channels_first'
+           if data_format and data_format.startswith('NC') else 'channels_last')
+-    layer = convolutional_layers.Convolution2DTranspose(
++    layer = tf.layers.Conv2DTranspose(
+         filters=num_outputs,
+         kernel_size=kernel_size,
+         strides=stride,
+@@ -1542,7 +1536,7 @@ def convolution3d_transpose(
+ 
+     df = ('channels_first'
+           if data_format and data_format.startswith('NC') else 'channels_last')
+-    layer = convolutional_layers.Convolution3DTranspose(
++    layer = tf.layers.Conv3DTranspose(
+         filters=num_outputs,
+         kernel_size=kernel_size,
+         strides=stride,
+@@ -1635,7 +1629,7 @@ def dropout(inputs,
+   with variable_scope.variable_scope(
+       scope, 'Dropout', [inputs], custom_getter=_model_variable_getter) as sc:
+     inputs = ops.convert_to_tensor(inputs)
+-    layer = core_layers.Dropout(
++    layer = tf.layers.Dropout(
+         rate=1 - keep_prob,
+         noise_shape=noise_shape,
+         seed=seed,
+@@ -1663,7 +1657,7 @@ def flatten(inputs, outputs_collections=None, scope=None):
+   """
+   with ops.name_scope(scope, 'Flatten', [inputs]) as sc:
+     inputs = ops.convert_to_tensor(inputs)
+-    outputs = core_layers.flatten(inputs)
++    outputs = tf.layers.flatten(inputs)
+     return utils.collect_named_outputs(outputs_collections, sc, outputs)
+ 
+ 
+@@ -1881,7 +1875,7 @@ def fully_connected(inputs,
+       reuse=reuse,
+       custom_getter=layer_variable_getter) as sc:
+     inputs = ops.convert_to_tensor(inputs)
+-    layer = core_layers.Dense(
++    layer = tf.layers.Dense(
+         units=num_outputs,
+         activation=None,
+         use_bias=not normalizer_fn and biases_initializer,
+@@ -1914,7 +1908,8 @@ def fully_connected(inputs,
+     return utils.collect_named_outputs(outputs_collections, sc.name, outputs)
+ 
+ 
+-class GDN(base.Layer):
++# pylint: disable=g-classes-have-attributes
++class GDN(tf.layers.Layer):
+   """Generalized divisive normalization layer.
+ 
+   Based on the papers:
+@@ -2000,7 +1995,7 @@ class GDN(base.Layer):
+     self._reparam_offset = reparam_offset
+     self.data_format = data_format
+     self._channel_axis()  # trigger ValueError early
+-    self.input_spec = input_spec.InputSpec(min_ndim=3, max_ndim=5)
++    self.input_spec = tf.layers.InputSpec(min_ndim=3, max_ndim=5)
+ 
+   def _channel_axis(self):
+     try:
+@@ -2056,7 +2051,7 @@ class GDN(base.Layer):
+       raise ValueError('The channel dimension of the inputs to `GDN` '
+                        'must be defined.')
+     self._input_rank = input_shape.ndims
+-    self.input_spec = input_spec.InputSpec(
++    self.input_spec = tf.layers.InputSpec(
+         ndim=input_shape.ndims, axes={channel_axis: num_channels})
+ 
+     pedestal = array_ops.constant(self._reparam_offset**2, dtype=self.dtype)
+@@ -2437,7 +2432,7 @@ def max_pool2d(inputs,
+     inputs = ops.convert_to_tensor(inputs)
+     df = ('channels_first'
+           if data_format and data_format.startswith('NC') else 'channels_last')
+-    layer = pooling_layers.MaxPooling2D(
++    layer = tf.layers.MaxPooling2D(
+         pool_size=kernel_size,
+         strides=stride,
+         padding=padding,
+@@ -2487,7 +2482,7 @@ def max_pool3d(inputs,
+     inputs = ops.convert_to_tensor(inputs)
+     df = ('channels_first'
+           if data_format and data_format.startswith('NC') else 'channels_last')
+-    layer = pooling_layers.MaxPooling3D(
++    layer = tf.layers.MaxPooling3D(
+         pool_size=kernel_size,
+         strides=stride,
+         padding=padding,
+@@ -2777,7 +2772,7 @@ def separable_convolution2d(
+           if data_format and data_format.startswith('NC') else 'channels_last')
+     if num_outputs is not None:
+       # Apply separable conv using the SeparableConvolution2D layer.
+-      layer = convolutional_layers.SeparableConvolution2D(
++      layer = tf.layers.SeparableConv2D(
+           filters=num_outputs,
+           kernel_size=kernel_size,
+           strides=stride,
+diff --git a/tf_slim/layers/rev_block_lib.py b/tf_slim/layers/rev_block_lib.py
+index ef85a7f..4d52bfc 100644
+--- a/tf_slim/layers/rev_block_lib.py
++++ b/tf_slim/layers/rev_block_lib.py
+@@ -33,13 +33,14 @@ import re
+ import numpy as np
+ import six
+ from six.moves import xrange  # pylint: disable=redefined-builtin
++import tensorflow.compat.v1 as tf
++
+ # pylint: disable=g-direct-tensorflow-import
+ from tf_slim.ops import arg_scope as arg_scope_lib
+ from tensorflow.python import tf2
+ from tensorflow.python.eager import backprop
+ from tensorflow.python.framework import dtypes
+ from tensorflow.python.framework import ops as framework_ops
+-from tensorflow.python.layers import base
+ from tensorflow.python.ops import array_ops
+ from tensorflow.python.ops import control_flow_ops
+ from tensorflow.python.ops import control_flow_util
+@@ -180,7 +181,7 @@ def _scope_wrap(fn, scope):
+   return wrap
+ 
+ 
+-class RevBlock(base.Layer):
++class RevBlock(tf.layers.Layer):
+   """Block of reversible layers. See rev_block."""
+ 
+   def __init__(self,
+diff --git a/tf_slim/layers/rev_block_lib_test.py b/tf_slim/layers/rev_block_lib_test.py
+index b402f44..f72884c 100644
+--- a/tf_slim/layers/rev_block_lib_test.py
++++ b/tf_slim/layers/rev_block_lib_test.py
+@@ -26,9 +26,6 @@ from tf_slim.layers import rev_block_lib
+ from tensorflow.python.framework import dtypes
+ from tensorflow.python.framework import ops
+ from tensorflow.python.framework import random_seed
+-from tensorflow.python.layers import convolutional
+-from tensorflow.python.layers import core as core_layers
+-from tensorflow.python.layers import normalization as normalization_layers
+ from tensorflow.python.ops import array_ops
+ from tensorflow.python.ops import gradients_impl
+ from tensorflow.python.ops import init_ops
+@@ -52,10 +49,10 @@ class RevBlockTest(test.TestCase):
+   def testForwardBackward(self):
+ 
+     def f(x):
+-      return core_layers.dense(x, self.CHANNELS // 2, use_bias=True)
++      return tf.layers.dense(x, self.CHANNELS // 2, use_bias=True)
+ 
+     def g(x):
+-      return core_layers.dense(x, self.CHANNELS // 2, use_bias=True)
++      return tf.layers.dense(x, self.CHANNELS // 2, use_bias=True)
+ 
+     x = random_ops.random_uniform(
+         [self.BATCH_SIZE, self.CHANNELS], dtype=dtypes.float32)
+@@ -75,10 +72,10 @@ class RevBlockTest(test.TestCase):
+   def testBackwardForward(self):
+ 
+     def f(x):
+-      return core_layers.dense(x, self.CHANNELS // 2, use_bias=True)
++      return tf.layers.dense(x, self.CHANNELS // 2, use_bias=True)
+ 
+     def g(x):
+-      return core_layers.dense(x, self.CHANNELS // 2, use_bias=True)
++      return tf.layers.dense(x, self.CHANNELS // 2, use_bias=True)
+ 
+     y = random_ops.random_uniform(
+         [self.BATCH_SIZE, self.CHANNELS], dtype=dtypes.float32)
+@@ -106,12 +103,12 @@ class RevBlockTest(test.TestCase):
+     if f is None:
+ 
+       def f(x):  # pylint: disable=function-redefined
+-        return core_layers.dense(x, self.CHANNELS // 2, use_bias=True)
++        return tf.layers.dense(x, self.CHANNELS // 2, use_bias=True)
+ 
+     if g is None:
+ 
+       def g(x):  # pylint: disable=function-redefined
+-        return core_layers.dense(x, self.CHANNELS // 2, use_bias=True)
++        return tf.layers.dense(x, self.CHANNELS // 2, use_bias=True)
+ 
+     if f_side_input is None:
+       f_side_input = []
+@@ -173,7 +170,7 @@ class RevBlockTest(test.TestCase):
+         [self.BATCH_SIZE, self.CHANNELS // 2])
+ 
+     def f(x, side_input):
+-      return core_layers.dense(
++      return tf.layers.dense(
+           x, self.CHANNELS // 2, use_bias=True) + side_input[0]
+ 
+     self._testRevBlock(f=f, f_side_input=[f_side_input])
+@@ -181,10 +178,10 @@ class RevBlockTest(test.TestCase):
+   def testMultipleFns(self):
+ 
+     def f1(x):
+-      return core_layers.dense(x, self.CHANNELS // 2)
++      return tf.layers.dense(x, self.CHANNELS // 2)
+ 
+     def f2(x):
+-      return core_layers.dense(x, self.CHANNELS // 2, activation=nn_ops.relu)
++      return tf.layers.dense(x, self.CHANNELS // 2, activation=nn_ops.relu)
+ 
+     self._testRevBlock(f=[f1, f2, f1, f2])
+ 
+@@ -194,9 +191,9 @@ class RevBlockTest(test.TestCase):
+         [self.BATCH_SIZE, 10, self.CHANNELS], dtype=dtypes.float32)
+ 
+     def f(x):
+-      x = convolutional.conv1d(x, self.CHANNELS // 2, 3, padding="same")
++      x = tf.layers.conv1d(x, self.CHANNELS // 2, 3, padding="same")
+       x = layers.batch_norm(x, is_training=False)
+-      x = convolutional.conv1d(x, self.CHANNELS // 2, 3, padding="same")
++      x = tf.layers.conv1d(x, self.CHANNELS // 2, 3, padding="same")
+       x = layers.batch_norm(x, is_training=False)
+       return x
+ 
+@@ -205,10 +202,10 @@ class RevBlockTest(test.TestCase):
+   def testReuse(self):
+ 
+     def f(x):
+-      return core_layers.dense(x, self.CHANNELS // 2)
++      return tf.layers.dense(x, self.CHANNELS // 2)
+ 
+     def g(x):
+-      return core_layers.dense(x, self.CHANNELS // 2)
++      return tf.layers.dense(x, self.CHANNELS // 2)
+ 
+     x = random_ops.random_uniform(
+         [self.BATCH_SIZE, self.CHANNELS], dtype=dtypes.float32)
+@@ -243,7 +240,7 @@ class RecomputeTest(test.TestCase):
+     def layer(x, name=None):
+       with variable_scope.variable_scope(name, default_name="layer"):
+         x = layers.layer_norm(x)
+-        x = convolutional.conv1d(
++        x = tf.layers.conv1d(
+             x,
+             10,
+             1,
+@@ -315,7 +312,7 @@ class RecomputeTest(test.TestCase):
+ 
+     @rev_block_lib.recompute_grad
+     def layer_with_recompute(inputs):
+-      return core_layers.dense(inputs, 2)
++      return tf.layers.dense(inputs, 2)
+ 
+     with variable_scope.variable_scope("layer", use_resource=True):
+       inputs = array_ops.ones((2, 4), dtypes.float32)
+@@ -334,7 +331,7 @@ class RecomputeTest(test.TestCase):
+     @rev_block_lib.recompute_grad
+     def layer_with_recompute(inputs):
+       with variable_scope.variable_scope("inner", use_resource=True):
+-        return core_layers.dense(inputs, 2)
++        return tf.layers.dense(inputs, 2)
+ 
+     with variable_scope.variable_scope("layer", use_resource=True):
+       inputs = array_ops.ones((2, 4), dtypes.float32)
+@@ -358,8 +355,8 @@ class RecomputeTest(test.TestCase):
+     @rev_block_lib.recompute_grad
+     def layer_with_recompute(inputs, is_recomputing=False):
+       kwarg_values.append(is_recomputing)
+-      out = core_layers.dense(inputs, 2)
+-      out = normalization_layers.batch_normalization(out, training=True)
++      out = tf.layers.dense(inputs, 2)
++      out = tf.layers.batch_normalization(out, training=True)
+       if is_recomputing:
+         # Ensure that the updates are not duplicated by popping off the latest
+         # 2 additions.
+-- 
+2.40.1
+
