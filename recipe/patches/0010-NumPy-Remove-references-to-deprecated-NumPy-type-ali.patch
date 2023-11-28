@@ -1,0 +1,46 @@
+From 68c918af6a1a3fefd70c522d6758723775098906 Mon Sep 17 00:00:00 2001
+From: Peter Hawkins <phawkins@google.com>
+Date: Tue, 20 Dec 2022 10:01:27 -0800
+Subject: [PATCH 10/30] [NumPy] Remove references to deprecated NumPy type
+ aliases.
+
+This change replaces references to a number of deprecated NumPy type aliases (np.bool, np.int, np.float, np.complex, np.object, np.str) with their recommended replacement (bool, int, float, complex, object, str).
+
+NumPy 1.24 drops the deprecated aliases, so we must remove uses before updating NumPy.
+
+PiperOrigin-RevId: 496687458
+Change-Id: If3e28221023dd69a4ee50157df787c79ac63c37c
+---
+ tf_slim/layers/sparse_ops_test.py      | 2 +-
+ tf_slim/losses/metric_learning_test.py | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tf_slim/layers/sparse_ops_test.py b/tf_slim/layers/sparse_ops_test.py
+index bc6d116..573df88 100644
+--- a/tf_slim/layers/sparse_ops_test.py
++++ b/tf_slim/layers/sparse_ops_test.py
+@@ -75,7 +75,7 @@ class DenseToSparseTensorTest(test.TestCase):
+       st = sparse_ops.dense_to_sparse_tensor([True, False, True, False])
+       result = sess.run(st)
+     self.assertEqual(result.indices.dtype, np.int64)
+-    self.assertEqual(result.values.dtype, np.bool)
++    self.assertEqual(result.values.dtype, bool)
+     self.assertEqual(result.dense_shape.dtype, np.int64)
+     self.assertAllEqual([[0], [2]], result.indices)
+     self.assertAllEqual([True, True], result.values)
+diff --git a/tf_slim/losses/metric_learning_test.py b/tf_slim/losses/metric_learning_test.py
+index b0e231e..460de88 100644
+--- a/tf_slim/losses/metric_learning_test.py
++++ b/tf_slim/losses/metric_learning_test.py
+@@ -320,7 +320,7 @@ class NpairsLossMultiLabelTest(test.TestCase):
+ 
+       similarity_matrix = np.matmul(embeddings_anchor, embeddings_positive.T)
+ 
+-      labels_remapped = np.dot(labels, labels.T).astype(np.float)
++      labels_remapped = np.dot(labels, labels.T).astype(float)
+       labels_remapped /= np.sum(labels_remapped, 1, keepdims=True)
+ 
+       xent_loss = math_ops.reduce_mean(nn.softmax_cross_entropy_with_logits(
+-- 
+2.40.1
+

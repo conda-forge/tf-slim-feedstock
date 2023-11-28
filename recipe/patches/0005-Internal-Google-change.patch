@@ -1,0 +1,26 @@
+From e00575ad39d19112a4b1342930825258316cf233 Mon Sep 17 00:00:00 2001
+From: Pulkit Sinha <pulkitsinha@google.com>
+Date: Mon, 15 Nov 2021 09:56:09 -0800
+Subject: [PATCH 05/30] Internal Google change
+
+PiperOrigin-RevId: 410009606
+Change-Id: Ie70858ad073cfc02a3481d5891f49fbe17a14b2d
+---
+ tf_slim/losses/metric_learning.py | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/tf_slim/losses/metric_learning.py b/tf_slim/losses/metric_learning.py
+index 7fe6d43..94fafe7 100644
+--- a/tf_slim/losses/metric_learning.py
++++ b/tf_slim/losses/metric_learning.py
+@@ -16,7 +16,6 @@
+ """Implements various metric learning losses."""
+ from __future__ import absolute_import
+ from __future__ import division
+-
+ from __future__ import print_function
+ 
+ import importlib
+-- 
+2.40.1
+

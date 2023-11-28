@@ -1,0 +1,37 @@
+From 7c760601d967c848bec3a821787d2fb2fc591e83 Mon Sep 17 00:00:00 2001
+From: Fiona Lang <flang@google.com>
+Date: Wed, 26 Apr 2023 12:41:44 -0700
+Subject: [PATCH 20/30] Update legacy reference to variable_scope.variable in
+ preparation for its deletion.
+
+PiperOrigin-RevId: 527345410
+Change-Id: I1a1fe50bd5cc8ba6ca47e7a0aa30d12996ba12ec
+---
+ tf_slim/ops/variables.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tf_slim/ops/variables.py b/tf_slim/ops/variables.py
+index e15ca6e..cbb58b5 100644
+--- a/tf_slim/ops/variables.py
++++ b/tf_slim/ops/variables.py
+@@ -145,7 +145,7 @@ def local_variable(initial_value,
+   Returns:
+     New variable.
+   """
+-  return variable_scope.variable(
++  return tf.Variable(
+       initial_value,
+       trainable=False,
+       collections=[ops.GraphKeys.LOCAL_VARIABLES],
+@@ -169,7 +169,7 @@ def global_variable(initial_value,
+   Returns:
+     New variable.
+   """
+-  return variable_scope.variable(
++  return tf.Variable(
+       initial_value,
+       trainable=False,
+       collections=[ops.GraphKeys.GLOBAL_VARIABLES],
+-- 
+2.40.1
+
