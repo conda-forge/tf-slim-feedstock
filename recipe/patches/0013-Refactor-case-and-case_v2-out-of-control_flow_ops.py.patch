@@ -1,0 +1,61 @@
+From 2b8351c823e1b96e31a5bb92afda904772ea9fdc Mon Sep 17 00:00:00 2001
+From: Fiona Lang <flang@google.com>
+Date: Tue, 28 Feb 2023 14:23:19 -0800
+Subject: [PATCH 13/30] Refactor `case` and `case_v2` out of
+ `control_flow_ops.py`.
+
+This is the first prerequisite step for refactoring `cond` out of `control_flow_ops.py` which is needed to eliminate circular dependencies.
+
+PiperOrigin-RevId: 513038726
+Change-Id: I60858e253277e5d684322e7479d535b412253366
+---
+ tf_slim/data/tfexample_decoder.py      | 3 ++-
+ tf_slim/data/tfexample_decoder_test.py | 4 ++--
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/tf_slim/data/tfexample_decoder.py b/tf_slim/data/tfexample_decoder.py
+index 7d4dc0b..e58fcc8 100644
+--- a/tf_slim/data/tfexample_decoder.py
++++ b/tf_slim/data/tfexample_decoder.py
+@@ -36,6 +36,7 @@ from tensorflow.python.framework import sparse_tensor
+ from tensorflow.python.ops import array_ops
+ from tensorflow.python.ops import array_ops_stack
+ from tensorflow.python.ops import check_ops
++from tensorflow.python.ops import control_flow_case
+ from tensorflow.python.ops import control_flow_ops
+ from tensorflow.python.ops import image_ops
+ from tensorflow.python.ops import map_fn
+@@ -451,7 +452,7 @@ class Image(ItemHandler):
+         math_ops.equal(image_format, 'raw'),
+         math_ops.equal(image_format, 'RAW')), decode_raw)]
+ 
+-    image = control_flow_ops.case(
++    image = control_flow_case.case(
+         pred_fn_pairs, default=check_jpeg, exclusive=True)
+ 
+     image.set_shape([None, None, self._channels])
+diff --git a/tf_slim/data/tfexample_decoder_test.py b/tf_slim/data/tfexample_decoder_test.py
+index 3cb140e..abed2a3 100644
+--- a/tf_slim/data/tfexample_decoder_test.py
++++ b/tf_slim/data/tfexample_decoder_test.py
+@@ -27,7 +27,7 @@ from tf_slim.data import tfexample_decoder
+ from google.protobuf import text_format
+ # pylint:disable=g-direct-tensorflow-import
+ from tensorflow.python.ops import array_ops
+-from tensorflow.python.ops import control_flow_ops
++from tensorflow.python.ops import control_flow_case
+ from tensorflow.python.ops import image_ops
+ from tensorflow.python.ops import lookup_ops
+ from tensorflow.python.ops import math_ops
+@@ -723,7 +723,7 @@ class TFExampleDecoderTest(test.TestCase):
+           def DecodeJpg():
+             return image_ops.decode_jpeg(image_buffer, 3)
+ 
+-          image = control_flow_ops.case(
++          image = control_flow_case.case(
+               {
+                   math_ops.equal(image_format, 'png'): DecodePng,
+               },
+-- 
+2.40.1
+

@@ -1,0 +1,121 @@
+From dbe1d0b0e9d82ecf6307b670f23b45c29b4cb193 Mon Sep 17 00:00:00 2001
+From: Fiona Lang <flang@google.com>
+Date: Wed, 1 Nov 2023 11:29:42 -0700
+Subject: [PATCH 29/30] Update outdated references to functions imported by
+ standard_ops.py to their actual locations.
+
+PiperOrigin-RevId: 578583336
+Change-Id: I91f4970eb185d31a24d69ce1b45371454ff9ca2a
+---
+ tf_slim/layers/layers.py       |  7 +++----
+ tf_slim/layers/regularizers.py |  7 +++----
+ tf_slim/layers/summaries.py    | 18 +++++++++---------
+ 3 files changed, 15 insertions(+), 17 deletions(-)
+
+diff --git a/tf_slim/layers/layers.py b/tf_slim/layers/layers.py
+index c91cc1d..86030fd 100644
+--- a/tf_slim/layers/layers.py
++++ b/tf_slim/layers/layers.py
+@@ -45,7 +45,6 @@ from tensorflow.python.ops import linalg_ops
+ from tensorflow.python.ops import math_ops
+ from tensorflow.python.ops import nn
+ from tensorflow.python.ops import sparse_ops
+-from tensorflow.python.ops import standard_ops
+ from tensorflow.python.ops import variable_scope
+ from tensorflow.python.ops import variables as tf_variables
+ from tensorflow.python.training import moving_averages
+@@ -2585,8 +2584,8 @@ def one_hot_encoding(labels,
+   with ops.name_scope(scope, 'OneHotEncoding', [labels, num_classes]) as sc:
+     labels = ops.convert_to_tensor(labels)
+     if labels.dtype == dtypes.int32:
+-      labels = standard_ops.to_int64(labels)
+-    outputs = standard_ops.one_hot(
++      labels = math_ops.to_int64(labels)
++    outputs = array_ops.one_hot(
+         labels, num_classes, on_value=on_value, off_value=off_value)
+     return utils.collect_named_outputs(outputs_collections, sc, outputs)
+ 
+@@ -3301,7 +3300,7 @@ def legacy_fully_connected(x,
+         trainable=trainable)
+     x_2_dim = x if len(dims) <= 2 else array_ops.reshape(
+         x, [-1, num_input_units])
+-    y = standard_ops.matmul(x_2_dim, w)
++    y = math_ops.matmul(x_2_dim, w)
+ 
+     if bias_init is not None:
+       bias_collections = set(
+diff --git a/tf_slim/layers/regularizers.py b/tf_slim/layers/regularizers.py
+index d84a424..2067df7 100644
+--- a/tf_slim/layers/regularizers.py
++++ b/tf_slim/layers/regularizers.py
+@@ -26,7 +26,6 @@ from tensorflow.python.framework import constant_op
+ from tensorflow.python.framework import ops
+ from tensorflow.python.ops import math_ops
+ from tensorflow.python.ops import nn
+-from tensorflow.python.ops import standard_ops
+ 
+ __all__ = ['l1_regularizer',
+            'l2_regularizer',
+@@ -66,9 +65,9 @@ def l1_regularizer(scale, scope=None):
+       my_scale = ops.convert_to_tensor(scale,
+                                        dtype=weights.dtype.base_dtype,
+                                        name='scale')
+-      return standard_ops.multiply(
++      return math_ops.multiply(
+           my_scale,
+-          standard_ops.reduce_sum(standard_ops.abs(weights)),
++          math_ops.reduce_sum(math_ops.abs(weights)),
+           name=name)
+ 
+   return l1
+@@ -105,7 +104,7 @@ def l2_regularizer(scale, scope=None):
+       my_scale = ops.convert_to_tensor(scale,
+                                        dtype=weights.dtype.base_dtype,
+                                        name='scale')
+-      return standard_ops.multiply(my_scale, nn.l2_loss(weights), name=name)
++      return math_ops.multiply(my_scale, nn.l2_loss(weights), name=name)
+ 
+   return l2
+ 
+diff --git a/tf_slim/layers/summaries.py b/tf_slim/layers/summaries.py
+index cbda467..57f76f8 100644
+--- a/tf_slim/layers/summaries.py
++++ b/tf_slim/layers/summaries.py
+@@ -24,7 +24,7 @@ import re
+ # pylint: disable=g-direct-tensorflow-import
+ from tensorflow.python.framework import dtypes
+ from tensorflow.python.framework import ops
+-from tensorflow.python.ops import standard_ops
++from tensorflow.python.ops import math_ops
+ from tensorflow.python.summary import summary
+ 
+ __all__ = [
+@@ -88,17 +88,17 @@ def summarize_activation(op):
+   if op.op.type in ('Relu', 'Softplus', 'Relu6'):
+     # Using inputs to avoid floating point equality and/or epsilons.
+     _add_scalar_summary(
+-        standard_ops.reduce_mean(
+-            standard_ops.to_float(
+-                standard_ops.less(op.op.inputs[
+-                    0], standard_ops.cast(0.0, op.op.inputs[0].dtype)))),
++        math_ops.reduce_mean(
++            math_ops.to_float(
++                math_ops.less(op.op.inputs[
++                    0], math_ops.cast(0.0, op.op.inputs[0].dtype)))),
+         '%s/zeros' % op.op.name)
+   if op.op.type == 'Relu6':
+     _add_scalar_summary(
+-        standard_ops.reduce_mean(
+-            standard_ops.to_float(
+-                standard_ops.greater(op.op.inputs[
+-                    0], standard_ops.cast(6.0, op.op.inputs[0].dtype)))),
++        math_ops.reduce_mean(
++            math_ops.to_float(
++                math_ops.greater(op.op.inputs[
++                    0], math_ops.cast(6.0, op.op.inputs[0].dtype)))),
+         '%s/sixes' % op.op.name)
+   return _add_histogram_summary(op, '%s/activation' % op.op.name)
+ 
+-- 
+2.40.1
+

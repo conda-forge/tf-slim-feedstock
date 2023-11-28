@@ -1,0 +1,39 @@
+From e0380eb4a70e205e7fed4d71ed515c6dec224b91 Mon Sep 17 00:00:00 2001
+From: TF-Slim Team <no-reply@google.com>
+Date: Thu, 22 Jun 2023 07:27:09 -0700
+Subject: [PATCH 24/30] Use ExitStack and call ops.device(device) only when
+ device is not None, instead of using ops.device(device or '') blindly. This
+ is to deal with the special legacy behavior of tf.device('').
+
+PiperOrigin-RevId: 542553364
+Change-Id: Ia2b52cb0dd729ec3bed0afafa05701560a771f6b
+---
+ tf_slim/ops/variables.py | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/tf_slim/ops/variables.py b/tf_slim/ops/variables.py
+index cbb58b5..3f4fc59 100644
+--- a/tf_slim/ops/variables.py
++++ b/tf_slim/ops/variables.py
+@@ -18,6 +18,7 @@ from __future__ import absolute_import
+ from __future__ import division
+ from __future__ import print_function
+ 
++import contextlib
+ import functools
+ import re
+ import tensorflow.compat.v1 as tf
+@@ -239,7 +240,9 @@ def variable(name,
+   if custom_getter is not None:
+     getter = functools.partial(
+         custom_getter, reuse=variable_scope.get_variable_scope().reuse)
+-  with ops.device(device or ''):
++  with contextlib.ExitStack() as es:
++    if device is not None:
++      es.enter_context(ops.device(device))
+     return getter(
+         name,
+         shape=shape,
+-- 
+2.40.1
+
