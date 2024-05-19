@@ -1,0 +1,73 @@
+From 1385820cc7e89f25eb1c41c688dc6a0aae91acfa Mon Sep 17 00:00:00 2001
+From: Katherine Wu <kathywu@google.com>
+Date: Wed, 1 Jun 2022 16:06:23 -0700
+Subject: [PATCH 06/30] Fix TensorFlow checkpoint and trackable imports.
+
+PiperOrigin-RevId: 452406141
+Change-Id: I6230d3bb59e6ecf8f6f961e0af41da809c2c53c8
+---
+ pip_pkg.sh                        | 2 +-
+ tests_release.sh                  | 2 +-
+ tf_slim/training/evaluation.py    | 2 +-
+ tf_slim/training/training_test.py | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/pip_pkg.sh b/pip_pkg.sh
+index 632cb16..37fdbd4 100755
+--- a/pip_pkg.sh
++++ b/pip_pkg.sh
+@@ -1,4 +1,4 @@
+-# Copyright 2021 The TF-Slim Authors.
++# Copyright 2022 The TF-Slim Authors.
+ #
+ # Licensed under the Apache License, Version 2.0 (the "License");
+ # you may not use this file except in compliance with the License.
+diff --git a/tests_release.sh b/tests_release.sh
+index a719d50..695bcf9 100755
+--- a/tests_release.sh
++++ b/tests_release.sh
+@@ -1,4 +1,4 @@
+-# Copyright 2021 The TF-Slim Authors.
++# Copyright 2022 The TF-Slim Authors.
+ #
+ # Licensed under the Apache License, Version 2.0 (the "License");
+ # you may not use this file except in compliance with the License.
+diff --git a/tf_slim/training/evaluation.py b/tf_slim/training/evaluation.py
+index fc0cc9f..3755467 100644
+--- a/tf_slim/training/evaluation.py
++++ b/tf_slim/training/evaluation.py
+@@ -140,10 +140,10 @@ from __future__ import print_function
+ import time
+ import tensorflow.compat.v1 as tf
+ # pylint: disable=g-direct-tensorflow-import
++from tensorflow.python.checkpoint import checkpoint_management
+ from tensorflow.python.platform import tf_logging as logging
+ from tensorflow.python.summary import summary
+ from tensorflow.python.training import basic_session_run_hooks
+-from tensorflow.python.training import checkpoint_management
+ from tensorflow.python.training import evaluation
+ from tensorflow.python.training import monitored_session
+ from tensorflow.python.training import session_run_hook
+diff --git a/tf_slim/training/training_test.py b/tf_slim/training/training_test.py
+index ebabf3a..555f68a 100644
+--- a/tf_slim/training/training_test.py
++++ b/tf_slim/training/training_test.py
+@@ -29,6 +29,7 @@ from tf_slim.layers import layers
+ from tf_slim.ops import variables as variables_lib
+ from tf_slim.training import training
+ # pylint: disable=g-direct-tensorflow-import
++from tensorflow.python.checkpoint import checkpoint_management
+ from tensorflow.python.framework import constant_op
+ from tensorflow.python.framework import dtypes
+ from tensorflow.python.framework import ops
+@@ -40,7 +41,6 @@ from tensorflow.python.ops import variables as variables_lib2
+ from tensorflow.python.platform import gfile
+ from tensorflow.python.platform import test
+ from tensorflow.python.training import basic_session_run_hooks
+-from tensorflow.python.training import checkpoint_management
+ from tensorflow.python.training import gradient_descent
+ from tensorflow.python.training import monitored_session
+ from tensorflow.python.training import saver as saver_lib
+-- 
+2.40.1
+

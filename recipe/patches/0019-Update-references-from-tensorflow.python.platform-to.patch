@@ -1,0 +1,480 @@
+From 5db3950e6ebca309dd4f4ca18cff70999043523a Mon Sep 17 00:00:00 2001
+From: Brian Wieder <bwieder@google.com>
+Date: Tue, 18 Apr 2023 07:58:34 -0700
+Subject: [PATCH 19/30] Update references from tensorflow.python.platform to
+ use the public API if available.
+
+PiperOrigin-RevId: 525147014
+Change-Id: Id77e0989ade18ae9a6d4cfe939a133b252a9598c
+---
+ tf_slim/data/dataset_data_provider_test.py |  5 ++-
+ tf_slim/layers/regularizers.py             |  6 ++--
+ tf_slim/learning.py                        | 37 ++++++++++++++--------
+ tf_slim/ops/variables.py                   |  9 +++---
+ tf_slim/ops/variables_test.py              | 25 +++++++--------
+ tf_slim/training/evaluation.py             | 19 ++++++-----
+ tf_slim/training/evaluation_test.py        | 21 ++++++------
+ tf_slim/training/training_test.py          | 13 ++++----
+ 8 files changed, 72 insertions(+), 63 deletions(-)
+
+diff --git a/tf_slim/data/dataset_data_provider_test.py b/tf_slim/data/dataset_data_provider_test.py
+index 61e9755..b967173 100644
+--- a/tf_slim/data/dataset_data_provider_test.py
++++ b/tf_slim/data/dataset_data_provider_test.py
+@@ -38,7 +38,6 @@ from tensorflow.python.ops import array_ops
+ from tensorflow.python.ops import image_ops
+ from tensorflow.python.ops import io_ops
+ from tensorflow.python.ops import parsing_ops
+-from tensorflow.python.platform import gfile
+ from tensorflow.python.platform import test
+ # pylint:enable=g-direct-tensorflow-import
+ 
+@@ -54,8 +53,8 @@ def _resize_image(image, height, width):
+ 
+ 
+ def _create_tfrecord_dataset(tmpdir):
+-  if not gfile.Exists(tmpdir):
+-    gfile.MakeDirs(tmpdir)
++  if not tf.gfile.Exists(tmpdir):
++    tf.gfile.MakeDirs(tmpdir)
+ 
+   data_sources = test_utils.create_tfrecord_files(tmpdir, num_files=1)
+ 
+diff --git a/tf_slim/layers/regularizers.py b/tf_slim/layers/regularizers.py
+index 9721c7f..d84a424 100644
+--- a/tf_slim/layers/regularizers.py
++++ b/tf_slim/layers/regularizers.py
+@@ -20,13 +20,13 @@ from __future__ import division
+ from __future__ import print_function
+ 
+ import numbers
++import tensorflow as tf
+ # pylint: disable=g-direct-tensorflow-import
+ from tensorflow.python.framework import constant_op
+ from tensorflow.python.framework import ops
+ from tensorflow.python.ops import math_ops
+ from tensorflow.python.ops import nn
+ from tensorflow.python.ops import standard_ops
+-from tensorflow.python.platform import tf_logging as logging
+ 
+ __all__ = ['l1_regularizer',
+            'l2_regularizer',
+@@ -57,7 +57,7 @@ def l1_regularizer(scale, scope=None):
+       raise ValueError('Setting a scale less than 0 on a regularizer: %g' %
+                        scale)
+     if scale == 0.:
+-      logging.info('Scale of 0 disables regularizer.')
++      tf.compat.v1.logging.info('Scale of 0 disables regularizer.')
+       return lambda _: None
+ 
+   def l1(weights, name=None):
+@@ -96,7 +96,7 @@ def l2_regularizer(scale, scope=None):
+       raise ValueError('Setting a scale less than 0 on a regularizer: %g.' %
+                        scale)
+     if scale == 0.:
+-      logging.info('Scale of 0 disables regularizer.')
++      tf.compat.v1.logging.info('Scale of 0 disables regularizer.')
+       return lambda _: None
+ 
+   def l2(weights):
+diff --git a/tf_slim/learning.py b/tf_slim/learning.py
+index 6803517..5e95058 100644
+--- a/tf_slim/learning.py
++++ b/tf_slim/learning.py
+@@ -255,6 +255,8 @@ import os
+ import sys
+ import time
+ 
++import tensorflow as tf
++
+ from tf_slim.training import training
+ # pylint:disable=g-direct-tensorflow-import
+ from tensorflow.core.protobuf import config_pb2
+@@ -270,7 +272,6 @@ from tensorflow.python.ops import control_flow_ops
+ from tensorflow.python.ops import lookup_ops
+ from tensorflow.python.ops import math_ops
+ from tensorflow.python.ops import variables
+-from tensorflow.python.platform import tf_logging as logging
+ from tensorflow.python.summary import summary
+ from tensorflow.python.training import optimizer as tf_optimizer
+ from tensorflow.python.training import saver as tf_saver
+@@ -371,7 +372,7 @@ def add_gradients_summaries(grads_and_vars):
+           summary.scalar(var.op.name + '/gradient_norm',
+                          clip_ops.global_norm([grad_values])))
+     else:
+-      logging.info('Var %s has no gradient', var.op.name)
++      tf.compat.v1.logging.info('Var %s has no gradient', var.op.name)
+ 
+   return summaries
+ 
+@@ -501,7 +502,7 @@ def train_step(sess, train_op, global_step, train_step_kwargs):
+     trace = tl.generate_chrome_trace_format()
+     trace_filename = os.path.join(train_step_kwargs['logdir'],
+                                   'tf_trace-%d.json' % np_global_step)
+-    logging.info('Writing trace to %s', trace_filename)
++    tf.compat.v1.logging.info('Writing trace to %s', trace_filename)
+     file_io.write_string_to_file(trace_filename, trace)
+     if 'summary_writer' in train_step_kwargs:
+       train_step_kwargs['summary_writer'].add_run_metadata(
+@@ -509,8 +510,12 @@ def train_step(sess, train_op, global_step, train_step_kwargs):
+ 
+   if 'should_log' in train_step_kwargs:
+     if sess.run(train_step_kwargs['should_log']):
+-      logging.info('global step %d: loss = %.4f (%.3f sec/step)',
+-                   np_global_step, total_loss, time_elapsed)
++      tf.compat.v1.logging.info(
++          'global step %d: loss = %.4f (%.3f sec/step)',
++          np_global_step,
++          total_loss,
++          time_elapsed,
++      )
+ 
+   if 'should_stop' in train_step_kwargs:
+     should_stop = sess.run(train_step_kwargs['should_stop'])
+@@ -744,10 +749,11 @@ def train(train_op,
+       should_retry = False
+       with sv.managed_session(
+           master, start_standard_services=False, config=session_config) as sess:
+-        logging.info('Starting Session.')
++        tf.compat.v1.logging.info('Starting Session.')
+         if session_wrapper is not None:
+-          logging.info('Wrapping session with wrapper function: %s',
+-                       session_wrapper)
++          tf.compat.v1.logging.info(
++              'Wrapping session with wrapper function: %s', session_wrapper
++          )
+           sess = session_wrapper(sess)
+         if is_chief:
+           if logdir:
+@@ -758,7 +764,7 @@ def train(train_op,
+               sess, global_step,
+               min(startup_delay_steps, number_of_steps or sys.maxsize))
+         threads = sv.start_queue_runners(sess)
+-        logging.info('Starting Queues.')
++        tf.compat.v1.logging.info('Starting Queues.')
+         if is_chief and sync_optimizer is not None:
+           sv.start_queue_runners(sess, chief_queue_runner)
+           sess.run(init_tokens_op)
+@@ -767,25 +773,28 @@ def train(train_op,
+             total_loss, should_stop = train_step_fn(sess, train_op, global_step,
+                                                     train_step_kwargs)
+             if should_stop:
+-              logging.info('Stopping Training.')
++              tf.compat.v1.logging.info('Stopping Training.')
+               sv.request_stop()
+               break
+         except errors.OutOfRangeError as e:
+           # OutOfRangeError is thrown when epoch limit per
+           # tf.compat.v1.train.limit_epochs is reached.
+-          logging.info('Caught OutOfRangeError. Stopping Training. %s', e)
++          tf.compat.v1.logging.info(
++              'Caught OutOfRangeError. Stopping Training. %s', e
++          )
+         if logdir and sv.is_chief:
+-          logging.info('Finished training! Saving model to disk.')
++          tf.compat.v1.logging.info('Finished training! Saving model to disk.')
+           sv.saver.save(sess, sv.save_path, global_step=sv.global_step)
+           sv.stop(
+               threads,
+               close_summary_writer=True,
+-              ignore_live_threads=ignore_live_threads)
++              ignore_live_threads=ignore_live_threads,
++          )
+ 
+     except errors.AbortedError:
+       # Always re-run on AbortedError as it indicates a restart of one of the
+       # distributed tensorflow servers.
+-      logging.info('Retrying training!')
++      tf.compat.v1.logging.info('Retrying training!')
+       should_retry = True
+ 
+   return total_loss
+diff --git a/tf_slim/ops/variables.py b/tf_slim/ops/variables.py
+index 0f988a9..e15ca6e 100644
+--- a/tf_slim/ops/variables.py
++++ b/tf_slim/ops/variables.py
+@@ -31,7 +31,6 @@ from tensorflow.python.ops import array_ops
+ from tensorflow.python.ops import control_flow_ops
+ from tensorflow.python.ops import variable_scope
+ from tensorflow.python.ops import variables
+-from tensorflow.python.platform import tf_logging as logging
+ from tensorflow.python.training import saver as tf_saver
+ from tensorflow.python.training import training_util
+ from tensorflow.python.util.deprecation import deprecated
+@@ -640,7 +639,7 @@ def assign_from_checkpoint(model_path, var_list, ignore_missing_vars=False):
+     if not reader.has_tensor(ckpt_name):
+       log_str = 'Checkpoint is missing variable [%s]' % ckpt_name
+       if ignore_missing_vars:
+-        logging.warning(log_str)
++        tf.logging.warning(log_str)
+         continue
+       else:
+         raise ValueError(log_str)
+@@ -720,7 +719,9 @@ def assign_from_checkpoint_fn(model_path,
+       if reader.has_tensor(var):
+         available_vars[var] = var_dict[var]
+       else:
+-        logging.warning('Variable %s missing in checkpoint %s', var, model_path)
++        tf.logging.warning(
++            'Variable %s missing in checkpoint %s', var, model_path
++        )
+     var_list = available_vars
+   if var_list:
+     saver = tf_saver.Saver(
+@@ -733,7 +734,7 @@ def assign_from_checkpoint_fn(model_path,
+ 
+     return callback
+   else:
+-    logging.warning('No Variables to restore')
++    tf.logging.warning('No Variables to restore')
+     return None
+ 
+ 
+diff --git a/tf_slim/ops/variables_test.py b/tf_slim/ops/variables_test.py
+index 589f951..a87f5d9 100644
+--- a/tf_slim/ops/variables_test.py
++++ b/tf_slim/ops/variables_test.py
+@@ -43,7 +43,6 @@ from tensorflow.python.ops import resource_variable_ops
+ from tensorflow.python.ops import variable_scope
+ from tensorflow.python.ops import variable_v1
+ from tensorflow.python.ops import variables as variables_lib
+-from tensorflow.python.platform import gfile
+ from tensorflow.python.platform import test
+ from tensorflow.python.training import device_setter
+ from tensorflow.python.training import saver as saver_lib
+@@ -1139,8 +1138,8 @@ class AssignFromCheckpointFnTest(test.TestCase):
+ 
+   def testLoadExistingVariables(self):
+     model_dir = tempfile.mkdtemp('load_existing_variables')
+-    if gfile.Exists(model_dir):
+-      gfile.DeleteRecursively(model_dir)
++    if tf.gfile.Exists(model_dir):
++      tf.gfile.DeleteRecursively(model_dir)
+ 
+     init_value0 = 10.0
+     init_value1 = 20.0
+@@ -1169,8 +1168,8 @@ class AssignFromCheckpointFnTest(test.TestCase):
+   @unittest.skip('sess.run functionality difference in v2.0')
+   def testLoadExistingVariablesDifferentShapeDefaultDoesNotAllowReshape(self):
+     model_dir = tempfile.mkdtemp('load_existing_vars_no_reshape')
+-    if gfile.Exists(model_dir):
+-      gfile.DeleteRecursively(model_dir)
++    if tf.gfile.Exists(model_dir):
++      tf.gfile.DeleteRecursively(model_dir)
+ 
+     init_value0 = [[10.0, 11.0]]
+     init_value1 = 20.0
+@@ -1196,8 +1195,8 @@ class AssignFromCheckpointFnTest(test.TestCase):
+   def testLoadExistingVariablesDifferentShapeAllowReshape(self):
+     model_dir = tempfile.mkdtemp(
+         'load_existing_variables_different_shape_allow_reshape')
+-    if gfile.Exists(model_dir):
+-      gfile.DeleteRecursively(model_dir)
++    if tf.gfile.Exists(model_dir):
++      tf.gfile.DeleteRecursively(model_dir)
+ 
+     init_value0 = [[10.0, 11.0]]
+     init_value1 = 20.0
+@@ -1225,8 +1224,8 @@ class AssignFromCheckpointFnTest(test.TestCase):
+ 
+   def testNotFoundError(self):
+     model_dir = tempfile.mkdtemp('not_found_error')
+-    if gfile.Exists(model_dir):
+-      gfile.DeleteRecursively(model_dir)
++    if tf.gfile.Exists(model_dir):
++      tf.gfile.DeleteRecursively(model_dir)
+ 
+     init_value0 = 10.0
+     init_value1 = 20.0
+@@ -1252,8 +1251,8 @@ class AssignFromCheckpointFnTest(test.TestCase):
+ 
+   def testMissingVariablesList(self):
+     model_dir = tempfile.mkdtemp('missing_variables_list')
+-    if gfile.Exists(model_dir):
+-      gfile.DeleteRecursively(model_dir)
++    if tf.gfile.Exists(model_dir):
++      tf.gfile.DeleteRecursively(model_dir)
+ 
+     init_value0 = 10.0
+     init_value1 = 20.0
+@@ -1282,8 +1281,8 @@ class AssignFromCheckpointFnTest(test.TestCase):
+ 
+   def testMissingVariablesDict(self):
+     model_dir = tempfile.mkdtemp('missing_variables_dict')
+-    if gfile.Exists(model_dir):
+-      gfile.DeleteRecursively(model_dir)
++    if tf.gfile.Exists(model_dir):
++      tf.gfile.DeleteRecursively(model_dir)
+ 
+     init_value0 = 10.0
+     init_value1 = 20.0
+diff --git a/tf_slim/training/evaluation.py b/tf_slim/training/evaluation.py
+index 3755467..e92cf2a 100644
+--- a/tf_slim/training/evaluation.py
++++ b/tf_slim/training/evaluation.py
+@@ -141,7 +141,6 @@ import time
+ import tensorflow.compat.v1 as tf
+ # pylint: disable=g-direct-tensorflow-import
+ from tensorflow.python.checkpoint import checkpoint_management
+-from tensorflow.python.platform import tf_logging as logging
+ from tensorflow.python.summary import summary
+ from tensorflow.python.training import basic_session_run_hooks
+ from tensorflow.python.training import evaluation
+@@ -187,7 +186,7 @@ def wait_for_new_checkpoint(checkpoint_dir,
+   Returns:
+     a new checkpoint path, or None if the timeout was reached.
+   """
+-  logging.info('Waiting for new checkpoint at %s', checkpoint_dir)
++  tf.logging.info('Waiting for new checkpoint at %s', checkpoint_dir)
+   stop_time = time.time() + timeout if timeout is not None else None
+   while True:
+     checkpoint_path = checkpoint_management.latest_checkpoint(checkpoint_dir)
+@@ -196,7 +195,7 @@ def wait_for_new_checkpoint(checkpoint_dir,
+         return None
+       time.sleep(seconds_to_sleep)
+     else:
+-      logging.info('Found new checkpoint at %s', checkpoint_path)
++      tf.logging.info('Found new checkpoint at %s', checkpoint_path)
+       return checkpoint_path
+ 
+ 
+@@ -249,7 +248,7 @@ def checkpoints_iterator(checkpoint_dir,
+     if new_checkpoint_path is None:
+       if not timeout_fn:
+         # timed out
+-        logging.info('Timed-out waiting for a checkpoint.')
++        tf.logging.info('Timed-out waiting for a checkpoint.')
+         return
+       if timeout_fn():
+         # The timeout_fn indicated that we are truly done.
+@@ -447,14 +446,18 @@ def evaluate_repeatedly(checkpoint_dir,
+ 
+     with monitored_session.MonitoredSession(
+         session_creator=session_creator, hooks=hooks) as session:
+-      logging.info('Starting evaluation at ' +
+-                   time.strftime('%Y-%m-%d-%H:%M:%S', time.gmtime()))
++      tf.logging.info(
++          'Starting evaluation at '
++          + time.strftime('%Y-%m-%d-%H:%M:%S', time.gmtime())
++      )
+       if eval_ops is not None:
+         while not session.should_stop():
+           session.run(eval_ops, feed_dict)
+ 
+-      logging.info('Finished evaluation at ' +
+-                   time.strftime('%Y-%m-%d-%H:%M:%S', time.gmtime()))
++      tf.logging.info(
++          'Finished evaluation at '
++          + time.strftime('%Y-%m-%d-%H:%M:%S', time.gmtime())
++      )
+     num_evaluations += 1
+ 
+     if (max_number_of_evaluations is not None and
+diff --git a/tf_slim/training/evaluation_test.py b/tf_slim/training/evaluation_test.py
+index 596592a..30e2a60 100644
+--- a/tf_slim/training/evaluation_test.py
++++ b/tf_slim/training/evaluation_test.py
+@@ -45,7 +45,6 @@ from tensorflow.python.ops import metrics
+ from tensorflow.python.ops import state_ops
+ from tensorflow.python.ops import variables as variables_lib
+ 
+-from tensorflow.python.platform import gfile
+ from tensorflow.python.platform import test
+ from tensorflow.python.summary import summary as summary_lib
+ from tensorflow.python.summary import summary_iterator
+@@ -70,8 +69,8 @@ class CheckpointIteratorTest(test.TestCase):
+ 
+   def testReturnsSingleCheckpointIfOneCheckpointFound(self):
+     checkpoint_dir = tempfile.mkdtemp('one_checkpoint_found')
+-    if not gfile.Exists(checkpoint_dir):
+-      gfile.MakeDirs(checkpoint_dir)
++    if not tf.gfile.Exists(checkpoint_dir):
++      tf.gfile.MakeDirs(checkpoint_dir)
+ 
+     global_step = variables.get_or_create_global_step()
+     saver = saver_lib.Saver()  # Saves the global step.
+@@ -88,8 +87,8 @@ class CheckpointIteratorTest(test.TestCase):
+ 
+   def testReturnsSingleCheckpointIfOneShardedCheckpoint(self):
+     checkpoint_dir = tempfile.mkdtemp('one_checkpoint_found_sharded')
+-    if not gfile.Exists(checkpoint_dir):
+-      gfile.MakeDirs(checkpoint_dir)
++    if not tf.gfile.Exists(checkpoint_dir):
++      tf.gfile.MakeDirs(checkpoint_dir)
+ 
+     global_step = variables.get_or_create_global_step()
+ 
+@@ -333,8 +332,8 @@ class EvaluateRepeatedlyTest(test.TestCase):
+ 
+   def testEvaluationLoopTimeout(self):
+     checkpoint_dir = tempfile.mkdtemp('evaluation_loop_timeout')
+-    if not gfile.Exists(checkpoint_dir):
+-      gfile.MakeDirs(checkpoint_dir)
++    if not tf.gfile.Exists(checkpoint_dir):
++      tf.gfile.MakeDirs(checkpoint_dir)
+ 
+     # We need a variable that the saver will try to restore.
+     variables.get_or_create_global_step()
+@@ -464,8 +463,8 @@ class EvaluateRepeatedlyTest(test.TestCase):
+   def testSummariesAreFlushedToDisk(self):
+     checkpoint_dir = tempfile.mkdtemp('summaries_are_flushed')
+     logdir = tempfile.mkdtemp('summaries_are_flushed_eval')
+-    if gfile.Exists(logdir):
+-      gfile.DeleteRecursively(logdir)
++    if tf.gfile.Exists(logdir):
++      tf.gfile.DeleteRecursively(logdir)
+ 
+     # Train a Model to completion:
+     self._train_model(checkpoint_dir, num_steps=300)
+@@ -491,8 +490,8 @@ class EvaluateRepeatedlyTest(test.TestCase):
+ 
+   def testSummaryAtEndHookWithoutSummaries(self):
+     logdir = tempfile.mkdtemp('summary_at_end_hook_without_summaires')
+-    if gfile.Exists(logdir):
+-      gfile.DeleteRecursively(logdir)
++    if tf.gfile.Exists(logdir):
++      tf.gfile.DeleteRecursively(logdir)
+ 
+     with ops.Graph().as_default():
+       # Purposefully don't add any summaries. The hook will just dump the
+diff --git a/tf_slim/training/training_test.py b/tf_slim/training/training_test.py
+index 555f68a..6a09025 100644
+--- a/tf_slim/training/training_test.py
++++ b/tf_slim/training/training_test.py
+@@ -38,7 +38,6 @@ from tensorflow.python.ops import gradients_impl
+ from tensorflow.python.ops import math_ops
+ from tensorflow.python.ops import variables as variables_lib2
+ 
+-from tensorflow.python.platform import gfile
+ from tensorflow.python.platform import test
+ from tensorflow.python.training import basic_session_run_hooks
+ from tensorflow.python.training import gradient_descent
+@@ -386,10 +385,10 @@ class TrainTest(test.TestCase):
+     logdir1 = tempfile.mkdtemp('tmp_logs1/')
+     logdir2 = tempfile.mkdtemp('tmp_logs2/')
+ 
+-    if gfile.Exists(logdir1):  # For running on jenkins.
+-      gfile.DeleteRecursively(logdir1)
+-    if gfile.Exists(logdir2):  # For running on jenkins.
+-      gfile.DeleteRecursively(logdir2)
++    if tf.gfile.Exists(logdir1):  # For running on jenkins.
++      tf.gfile.DeleteRecursively(logdir1)
++    if tf.gfile.Exists(logdir2):  # For running on jenkins.
++      tf.gfile.DeleteRecursively(logdir2)
+ 
+     # First, train the model one step (make sure the error is high).
+     with ops.Graph().as_default():
+@@ -462,8 +461,8 @@ class TrainTest(test.TestCase):
+ 
+   def testTrainAllVarsHasLowerLossThanTrainSubsetOfVars(self):
+     logdir = tempfile.mkdtemp('tmp_logs3/')
+-    if gfile.Exists(logdir):  # For running on jenkins.
+-      gfile.DeleteRecursively(logdir)
++    if tf.gfile.Exists(logdir):  # For running on jenkins.
++      tf.gfile.DeleteRecursively(logdir)
+ 
+     # First, train only the weights of the model.
+     with ops.Graph().as_default():
+-- 
+2.40.1
+

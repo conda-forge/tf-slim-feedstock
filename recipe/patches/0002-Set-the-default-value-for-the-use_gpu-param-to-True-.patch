@@ -1,0 +1,46 @@
+From 6387efbf7878c5269f3a19cbe33e631988528bc5 Mon Sep 17 00:00:00 2001
+From: Sanjoy Das <sanjoy@google.com>
+Date: Wed, 10 Feb 2021 22:53:32 -0800
+Subject: [PATCH 02/30] Set the default value for the use_gpu-param to True in
+ test utilities
+
+Also, fix a bug in IsFunctionCallOp found by this CL.
+
+Contrary to what it sounds like, `use_gpu` does not force the test to run on
+GPUs, it merely *allows* the test to run on GPUs (there is a separate
+`force_gpu` option for forcing).  This means setting `use_gpu` to `True` means
+that the test will run on GPUs if one is available.
+
+Given that setting `use_gpu` to `True` by default makes sense, and there should
+be a good reason for a test to set it to `False` (which disallows GPU use, even
+when one is available).
+
+For this reason, this CL changes the default value of `use_gpu`.  As you can
+see, this has already found a few real bugs.
+
+In a later CL I will remove instances that pass use_gpu=True explicitly as those
+should no longer be necessary.
+
+PiperOrigin-RevId: 356906251
+Change-Id: I39cc6e254b3295f3f3bc5c90f397cf15bd1c2eed
+---
+ tf_slim/ops/variables_test.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/tf_slim/ops/variables_test.py b/tf_slim/ops/variables_test.py
+index 231f99e..9f127eb 100644
+--- a/tf_slim/ops/variables_test.py
++++ b/tf_slim/ops/variables_test.py
+@@ -480,7 +480,8 @@ class VariablesTest(test.TestCase):
+       self.assertDeviceEqual(e.initial_value.device, 'cpu:99')
+ 
+   def testVariableWithReplicaDeviceSetter(self):
+-    with self.cached_session():
++    # Explicitly disable GPU usage because we check for the CPU device below.
++    with self.cached_session(use_gpu=False):
+       with ops.device(device_setter.replica_device_setter(ps_tasks=2)):
+         a = variables_lib2.variable('a', [])
+         b = variables_lib2.variable('b', [])
+-- 
+2.40.1
+

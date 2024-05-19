@@ -1,0 +1,61 @@
+From 7da63e771944af333958ce0760b01f9e8e0b7cee Mon Sep 17 00:00:00 2001
+From: Peter Hawkins <phawkins@google.com>
+Date: Thu, 8 Jun 2023 10:27:39 -0700
+Subject: [PATCH 23/30] [NumPy] Fix uses of functions deprecated in NumPy 1.25.
+
+NumPy 1.25 deprecates a number of function aliases (https://github.com/numpy/numpy/releases/tag/v1.25.0rc1)
+
+This change replaces uses of the deprecated names with their recommended replacements:
+* `np.round_` -> `np.round`
+* `np.product` -> `np.prod`
+* `np.cumproduct` -> `np.cumprod`
+* `np.sometrue` -> `np.any`
+* `np.alltrue` -> `np.all`
+
+The deprecated functions will issue a `DeprecationWarning` under NumPy 1.25, and will be removed in NumPy 2.0.
+
+PiperOrigin-RevId: 538824879
+Change-Id: Icd6a0f4b8fd81bcf0b544e62f4313e41c6adf0ff
+---
+ tf_slim/layers/layers_test.py            | 4 ++--
+ tf_slim/metrics/metric_ops_large_test.py | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/tf_slim/layers/layers_test.py b/tf_slim/layers/layers_test.py
+index 0aa91d3..b2b69da 100644
+--- a/tf_slim/layers/layers_test.py
++++ b/tf_slim/layers/layers_test.py
+@@ -2703,7 +2703,7 @@ class BatchNormTest(test.TestCase):
+   def _runBatchNormalizationWithFormat(self, shape, data_format, is_training):
+     channels = shape[-1]
+     with self.session(use_gpu=True) as sess:
+-      images = np.arange(np.product(shape), dtype=np.float32).reshape(shape)
++      images = np.arange(np.prod(shape), dtype=np.float32).reshape(shape)
+       beta = init_ops.constant_initializer(
+           np.arange(2, channels + 2, dtype=np.float32))
+       gamma = init_ops.constant_initializer(
+@@ -2789,7 +2789,7 @@ class BatchNormTest(test.TestCase):
+ 
+   def _runFusedBatchNorm(self, shape, dtype):
+     channels = shape[1]
+-    images = np.arange(np.product(shape), dtype=dtype).reshape(shape)
++    images = np.arange(np.prod(shape), dtype=dtype).reshape(shape)
+     beta = init_ops.constant_initializer(
+         np.arange(2, channels + 2, dtype=np.float32))
+     gamma = init_ops.constant_initializer(
+diff --git a/tf_slim/metrics/metric_ops_large_test.py b/tf_slim/metrics/metric_ops_large_test.py
+index 8f653ee..d621df0 100644
+--- a/tf_slim/metrics/metric_ops_large_test.py
++++ b/tf_slim/metrics/metric_ops_large_test.py
+@@ -63,7 +63,7 @@ class StreamingPrecisionRecallAtEqualThresholdsLargeTest(test.TestCase):
+       # Since we use random values, we won't know the tp/fp/tn/fn values, but
+       # tp and fp at threshold 0 should be the total number of positive and
+       # negative labels, hence their sum should be total number of pixels.
+-      expected_value = 1.0 * np.product(shape) * num_updates
++      expected_value = 1.0 * np.prod(shape) * num_updates
+       got_value = prdata.tp[0] + prdata.fp[0]
+       # They should be at least within 1.
+       self.assertNear(got_value, expected_value, 1.0)
+-- 
+2.40.1
+
