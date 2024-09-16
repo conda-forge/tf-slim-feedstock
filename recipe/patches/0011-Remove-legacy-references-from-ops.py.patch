@@ -1,0 +1,197 @@
+From c3cfb34a76545d3c5d8d539430c449e80bddf44a Mon Sep 17 00:00:00 2001
+From: Juan Martinez Castellanos <juanantoniomc@google.com>
+Date: Thu, 26 Jan 2023 14:21:23 -0800
+Subject: [PATCH 11/30] Remove legacy references from `ops.py`.
+
+This is done to eventually remove the lazy loads in `indexed_slices.py`.
+
+PiperOrigin-RevId: 504941001
+Change-Id: I8bbecb24a5e553aa9419d0bf5859222cc1b488e5
+---
+ tf_slim/layers/optimizers.py | 16 +++++++++-------
+ tf_slim/learning.py          | 11 ++++++-----
+ tf_slim/learning_test.py     |  5 +++--
+ tf_slim/training/training.py | 11 ++++++-----
+ 4 files changed, 24 insertions(+), 19 deletions(-)
+
+diff --git a/tf_slim/layers/optimizers.py b/tf_slim/layers/optimizers.py
+index 1797f2a..ea5ca2f 100644
+--- a/tf_slim/layers/optimizers.py
++++ b/tf_slim/layers/optimizers.py
+@@ -22,6 +22,7 @@ from __future__ import print_function
+ import six
+ # pylint: disable=g-direct-tensorflow-import
+ from tensorflow.python.framework import dtypes
++from tensorflow.python.framework import indexed_slices
+ from tensorflow.python.framework import ops
+ from tensorflow.python.ops import array_ops
+ from tensorflow.python.ops import check_ops
+@@ -271,7 +272,7 @@ def optimize_loss(loss,
+ 
+     # Add histograms for variables, gradients and gradient norms.
+     for gradient, variable in gradients:
+-      if isinstance(gradient, ops.IndexedSlices):
++      if isinstance(gradient, indexed_slices.IndexedSlices):
+         grad_values = gradient.values
+       else:
+         grad_values = gradient
+@@ -395,10 +396,10 @@ def adaptive_clipping_fn(std_factor=2.,
+     for grad in grads:
+       if grad is None:
+         clipped_grads.append(None)
+-      elif isinstance(grad, ops.IndexedSlices):
++      elif isinstance(grad, indexed_slices.IndexedSlices):
+         clipped_grads.append(
+-            ops.IndexedSlices(grad.values * factor, grad.indices,
+-                              grad.dense_shape))
++            indexed_slices.IndexedSlices(
++                grad.values * factor, grad.indices, grad.dense_shape))
+       else:
+         clipped_grads.append(grad * factor)
+ 
+@@ -415,7 +416,7 @@ def _add_scaled_noise_to_gradients(grads_and_vars, gradient_noise_scale):
+     if gradient is None:
+       noisy_gradients.append(None)
+       continue
+-    if isinstance(gradient, ops.IndexedSlices):
++    if isinstance(gradient, indexed_slices.IndexedSlices):
+       gradient_shape = gradient.dense_shape
+     else:
+       gradient_shape = gradient.get_shape()
+@@ -432,9 +433,10 @@ def _multiply_gradients(grads_and_vars, gradient_multipliers):
+         (var in gradient_multipliers or var.name in gradient_multipliers)):
+       key = var if var in gradient_multipliers else var.name
+       multiplier = gradient_multipliers[key]
+-      if isinstance(grad, ops.IndexedSlices):
++      if isinstance(grad, indexed_slices.IndexedSlices):
+         grad_values = grad.values * multiplier
+-        grad = ops.IndexedSlices(grad_values, grad.indices, grad.dense_shape)
++        grad = indexed_slices.IndexedSlices(
++            grad_values, grad.indices, grad.dense_shape)
+       else:
+         grad *= math_ops.cast(multiplier, grad.dtype)
+     multiplied_grads_and_vars.append((grad, var))
+diff --git a/tf_slim/learning.py b/tf_slim/learning.py
+index 3d4e0a3..6803517 100644
+--- a/tf_slim/learning.py
++++ b/tf_slim/learning.py
+@@ -261,6 +261,7 @@ from tensorflow.core.protobuf import config_pb2
+ from tensorflow.python.client import timeline
+ from tensorflow.python.framework import constant_op
+ from tensorflow.python.framework import errors
++from tensorflow.python.framework import indexed_slices
+ from tensorflow.python.framework import ops
+ from tensorflow.python.lib.io import file_io
+ from tensorflow.python.ops import array_ops
+@@ -297,9 +298,9 @@ def clip_gradient_norms(gradients_to_variables, max_norm):
+   clipped_grads_and_vars = []
+   for grad, var in gradients_to_variables:
+     if grad is not None:
+-      if isinstance(grad, ops.IndexedSlices):
++      if isinstance(grad, indexed_slices.IndexedSlices):
+         tmp = clip_ops.clip_by_norm(grad.values, max_norm)
+-        grad = ops.IndexedSlices(tmp, grad.indices, grad.dense_shape)
++        grad = indexed_slices.IndexedSlices(tmp, grad.indices, grad.dense_shape)
+       else:
+         grad = clip_ops.clip_by_norm(grad, max_norm)
+     clipped_grads_and_vars.append((grad, var))
+@@ -339,9 +340,9 @@ def multiply_gradients(grads_and_vars, gradient_multipliers):
+       if not isinstance(multiplier, ops.Tensor):
+         multiplier = constant_op.constant(multiplier, dtype=grad.dtype)
+ 
+-      if isinstance(grad, ops.IndexedSlices):
++      if isinstance(grad, indexed_slices.IndexedSlices):
+         tmp = grad.values * multiplier
+-        grad = ops.IndexedSlices(tmp, grad.indices, grad.dense_shape)
++        grad = indexed_slices.IndexedSlices(tmp, grad.indices, grad.dense_shape)
+       else:
+         grad *= multiplier
+     multiplied_grads_and_vars.append((grad, var))
+@@ -360,7 +361,7 @@ def add_gradients_summaries(grads_and_vars):
+   summaries = []
+   for grad, var in grads_and_vars:
+     if grad is not None:
+-      if isinstance(grad, ops.IndexedSlices):
++      if isinstance(grad, indexed_slices.IndexedSlices):
+         grad_values = grad.values
+       else:
+         grad_values = grad
+diff --git a/tf_slim/learning_test.py b/tf_slim/learning_test.py
+index fee0416..4b749a5 100644
+--- a/tf_slim/learning_test.py
++++ b/tf_slim/learning_test.py
+@@ -31,6 +31,7 @@ from tf_slim.layers import layers
+ from tf_slim.ops import variables as variables_lib2
+ 
+ # pylint:disable=g-direct-tensorflow-import
++from tensorflow.python.framework import indexed_slices
+ from tensorflow.python.framework import ops
+ from tensorflow.python.framework import random_seed
+ from tensorflow.python.ops import math_ops
+@@ -99,7 +100,7 @@ class ClipGradientNormsTest(test.TestCase):
+     indices = tf.constant(sparse_grad_indices, dtype=tf.int32)
+     dense_shape = tf.constant(sparse_grad_dense_shape, dtype=tf.int32)
+ 
+-    gradient = ops.IndexedSlices(values, indices, dense_shape)
++    gradient = indexed_slices.IndexedSlices(values, indices, dense_shape)
+     variable = variables_lib.Variable(self._zero_vec, dtype=tf.float32)
+ 
+     gradients_to_variables = (gradient, variable)
+@@ -177,7 +178,7 @@ class MultiplyGradientsTest(test.TestCase):
+     indices = tf.constant([0, 1, 2], dtype=tf.int32)
+     dense_shape = tf.constant([self._grad_vec.size], dtype=tf.int32)
+ 
+-    gradient = ops.IndexedSlices(values, indices, dense_shape)
++    gradient = indexed_slices.IndexedSlices(values, indices, dense_shape)
+     variable = variables_lib.Variable(tf.zeros((1, 3)))
+     grad_to_var = (gradient, variable)
+     gradient_multipliers = {variable: self._multiplier}
+diff --git a/tf_slim/training/training.py b/tf_slim/training/training.py
+index 2e9a7da..1ece335 100644
+--- a/tf_slim/training/training.py
++++ b/tf_slim/training/training.py
+@@ -248,6 +248,7 @@ from __future__ import print_function
+ 
+ # pylint: disable=g-direct-tensorflow-import
+ 
++from tensorflow.python.framework import indexed_slices
+ from tensorflow.python.framework import ops
+ from tensorflow.python.ops import array_ops
+ from tensorflow.python.ops import clip_ops
+@@ -282,7 +283,7 @@ def add_gradients_summaries(grads_and_vars):
+   summaries = []
+   for grad, var in grads_and_vars:
+     if grad is not None:
+-      if isinstance(grad, ops.IndexedSlices):
++      if isinstance(grad, indexed_slices.IndexedSlices):
+         grad_values = grad.values
+       else:
+         grad_values = grad
+@@ -310,9 +311,9 @@ def clip_gradient_norms(gradients_to_variables, max_norm):
+   clipped_grads_and_vars = []
+   for grad, var in gradients_to_variables:
+     if grad is not None:
+-      if isinstance(grad, ops.IndexedSlices):
++      if isinstance(grad, indexed_slices.IndexedSlices):
+         tmp = clip_ops.clip_by_norm(grad.values, max_norm)
+-        grad = ops.IndexedSlices(tmp, grad.indices, grad.dense_shape)
++        grad = indexed_slices.IndexedSlices(tmp, grad.indices, grad.dense_shape)
+       else:
+         grad = clip_ops.clip_by_norm(grad, max_norm)
+     clipped_grads_and_vars.append((grad, var))
+@@ -357,10 +358,10 @@ def multiply_gradients(grads_and_vars, gradient_multipliers):
+       if grad is None:
+         raise ValueError('Requested multiple of `None` gradient.')
+ 
+-      if isinstance(grad, ops.IndexedSlices):
++      if isinstance(grad, indexed_slices.IndexedSlices):
+         tmp = grad.values * ops.convert_to_tensor(
+             gradient_multipliers[key], dtype=grad.dtype)
+-        grad = ops.IndexedSlices(tmp, grad.indices, grad.dense_shape)
++        grad = indexed_slices.IndexedSlices(tmp, grad.indices, grad.dense_shape)
+       else:
+         grad *= ops.convert_to_tensor(
+             gradient_multipliers[key], dtype=grad.dtype)
+-- 
+2.40.1
+

@@ -1,0 +1,65 @@
+From 9fed2edf2fe1ad9e720e85dfecf38b2093d57039 Mon Sep 17 00:00:00 2001
+From: Alex Kantchelian <akant@google.com>
+Date: Fri, 23 Jun 2023 07:04:10 -0700
+Subject: [PATCH 25/30] Fix streaming_concat crashes on specific and relatively
+ large inputs.
+
+A loss of precision issue in _next_array_size() results in invalid minimum array sizes for specific, relatively large inputs. Such array sizes are occasionally encountered for (indirect) users of streaming_concat performing large-scale metric computations, leading to hard-to-reproduce evaluation job crashes. Affected users typically see a runtime error mentioning the strided slice assignment operation `append_values_op = array[size:new_size].assign(batch_values)` with the following message template: `Cannot broadcast input shape [x] into final shape [y]`, where x > y.
+
+For instance, for the default 1.5 growth factor, the smallest input which results in an error is 7,371,556. For this input, _next_array_size() returns 7,371,555 which is one less than the requested minimal array size.
+
+PiperOrigin-RevId: 542849164
+Change-Id: Ia998381d0e03b99168a73e3dd7c29c58890cc2b8
+---
+ tf_slim/metrics/metric_ops.py      |  5 +++--
+ tf_slim/metrics/metric_ops_test.py | 17 +++++++++++++++++
+ 2 files changed, 20 insertions(+), 2 deletions(-)
+
+diff --git a/tf_slim/metrics/metric_ops.py b/tf_slim/metrics/metric_ops.py
+index ded2f25..dc54177 100644
+--- a/tf_slim/metrics/metric_ops.py
++++ b/tf_slim/metrics/metric_ops.py
+@@ -3541,9 +3541,10 @@ def _next_array_size(required_size, growth_factor=1.5):
+   Returns:
+     tf.Tensor with dtype=int32 giving the next array size.
+   """
++  required_size = math_ops.cast(required_size, dtypes.float64)
++  growth_factor = math_ops.cast(growth_factor, dtypes.float64)
+   exponent = math_ops.ceil(
+-      math_ops.log(math_ops.cast(required_size, dtypes.float32)) /
+-      math_ops.log(math_ops.cast(growth_factor, dtypes.float32)))
++      math_ops.log(required_size) / math_ops.log(growth_factor))
+   return math_ops.cast(math_ops.ceil(growth_factor**exponent), dtypes.int32)
+ 
+ 
+diff --git a/tf_slim/metrics/metric_ops_test.py b/tf_slim/metrics/metric_ops_test.py
+index a5fe9e8..3e6b214 100644
+--- a/tf_slim/metrics/metric_ops_test.py
++++ b/tf_slim/metrics/metric_ops_test.py
+@@ -6756,6 +6756,23 @@ class StreamingConcatTest(tf1.test.TestCase):
+       self.assertEqual(next_array_size(5, growth_factor=2).eval(), 8)
+       self.assertEqual(next_array_size(6, growth_factor=2).eval(), 8)
+ 
++  def testNextArraySizeHandlesLargeSizes(self):
++    # Tests that next_array_size() always returns a large-enough array size.
++    # Test around the boundaries where off-by-one errors are most likely.
++    growth_factor = 1.5
++    validity_limit = 2**30
++    exponent_limit = math.ceil(
++        math.log(validity_limit) / math.log(growth_factor)
++    )
++    required_size = array_ops.placeholder(dtypes_lib.int32, [])
++    outputed_size = _next_array_size(required_size, growth_factor)
++    with self.cached_session():
++      for exponent in range(exponent_limit):
++        center = math.ceil(growth_factor**exponent)
++        for x in range(max(1, center - 100), center + 100):
++          self.assertGreaterEqual(
++              outputed_size.eval(feed_dict={required_size: x}), x)
++
+   def testStreamingConcat(self):
+     with self.cached_session() as sess:
+       values = array_ops.placeholder(dtypes_lib.int32, [None])
+-- 
+2.40.1
+

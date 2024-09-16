@@ -1,0 +1,92 @@
+From b6dea832ec5cf5c8709513dc9a8e25ec4d9ee778 Mon Sep 17 00:00:00 2001
+From: Fiona Lang <flang@google.com>
+Date: Tue, 11 Jul 2023 10:57:43 -0700
+Subject: [PATCH 26/30] Update ops.Tensor references to
+ //third_party/tensorflow/python/framework/tensor.py.
+
+PiperOrigin-RevId: 547238499
+Change-Id: I59aa34cab5ffe38cbd932080c1ca739753dee0dd
+---
+ tf_slim/layers/optimizers.py       | 3 ++-
+ tf_slim/layers/utils.py            | 5 ++++-
+ tf_slim/learning.py                | 2 +-
+ tf_slim/metrics/metric_ops_test.py | 4 ++--
+ 4 files changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/tf_slim/layers/optimizers.py b/tf_slim/layers/optimizers.py
+index ea5ca2f..d87d133 100644
+--- a/tf_slim/layers/optimizers.py
++++ b/tf_slim/layers/optimizers.py
+@@ -24,6 +24,7 @@ import six
+ from tensorflow.python.framework import dtypes
+ from tensorflow.python.framework import indexed_slices
+ from tensorflow.python.framework import ops
++from tensorflow.python.framework import tensor
+ from tensorflow.python.ops import array_ops
+ from tensorflow.python.ops import check_ops
+ from tensorflow.python.ops import clip_ops
+@@ -170,7 +171,7 @@ def optimize_loss(loss,
+     # Learning rate variable, with possible decay.
+     lr = None
+     if learning_rate is not None:
+-      if (isinstance(learning_rate, ops.Tensor) and
++      if (isinstance(learning_rate, tensor.Tensor) and
+           learning_rate.get_shape().ndims == 0):
+         lr = learning_rate
+       elif isinstance(learning_rate, float):
+diff --git a/tf_slim/layers/utils.py b/tf_slim/layers/utils.py
+index 5a4a664..e251e5c 100644
+--- a/tf_slim/layers/utils.py
++++ b/tf_slim/layers/utils.py
+@@ -24,6 +24,7 @@ from collections import OrderedDict
+ 
+ # pylint: disable=g-direct-tensorflow-import
+ from tensorflow.python.framework import ops
++from tensorflow.python.framework import tensor as tensor_lib
+ from tensorflow.python.framework import tensor_shape
+ from tensorflow.python.framework import tensor_util
+ from tensorflow.python.ops import cond
+@@ -160,7 +161,9 @@ def constant_value(value_or_tensor_or_var, dtype=None):
+   if value_or_tensor_or_var is None:
+     raise ValueError('value_or_tensor_or_var cannot be None')
+   value = value_or_tensor_or_var
+-  if isinstance(value_or_tensor_or_var, (ops.Tensor, variables.Variable)):
++  if isinstance(
++      value_or_tensor_or_var, (tensor_lib.Tensor, variables.Variable)
++  ):
+     if dtype and value_or_tensor_or_var.dtype != dtype:
+       raise ValueError('It has the wrong type %s instead of %s' % (
+           value_or_tensor_or_var.dtype, dtype))
+diff --git a/tf_slim/learning.py b/tf_slim/learning.py
+index 5e95058..f5e2d46 100644
+--- a/tf_slim/learning.py
++++ b/tf_slim/learning.py
+@@ -338,7 +338,7 @@ def multiply_gradients(grads_and_vars, gradient_multipliers):
+         raise ValueError('Requested multiple of `None` gradient.')
+ 
+       multiplier = gradient_multipliers[key]
+-      if not isinstance(multiplier, ops.Tensor):
++      if not isinstance(multiplier, tf.Tensor):
+         multiplier = constant_op.constant(multiplier, dtype=grad.dtype)
+ 
+       if isinstance(grad, indexed_slices.IndexedSlices):
+diff --git a/tf_slim/metrics/metric_ops_test.py b/tf_slim/metrics/metric_ops_test.py
+index 3e6b214..d66257a 100644
+--- a/tf_slim/metrics/metric_ops_test.py
++++ b/tf_slim/metrics/metric_ops_test.py
+@@ -6940,10 +6940,10 @@ class CountTest(tf1.test.TestCase):
+ 
+   def testReturnType(self):
+     c, op = metrics.count(array_ops.ones([4, 3]))
+-    self.assertIsInstance(c, ops.Tensor)
++    self.assertIsInstance(c, tf2.Tensor)
+     # Note: If resource variables are enabeld the result is a Variable
+     # (AssignAdd)
+-    self.assertIsInstance(op, (ops.Operation, ops.Tensor, tf2.Variable))
++    self.assertIsInstance(op, (ops.Operation, tf2.Tensor, tf2.Variable))
+ 
+   def testBasic(self):
+     with self.cached_session() as sess:
+-- 
+2.40.1
+

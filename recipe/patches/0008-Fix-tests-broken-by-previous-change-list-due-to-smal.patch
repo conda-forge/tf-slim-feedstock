@@ -1,0 +1,27 @@
+From 90a76e567c0fe0aacf42e26bbcf03d30263a10cf Mon Sep 17 00:00:00 2001
+From: TF-Slim Team <no-reply@google.com>
+Date: Mon, 19 Sep 2022 12:30:22 -0700
+Subject: [PATCH 08/30] Fix tests broken by previous change list due to small
+ differences in XLA ops.
+
+PiperOrigin-RevId: 475357125
+Change-Id: If902452fd5c2ecdc7cce69386550a8b965a1a1d2
+---
+ tf_slim/layers/layers_test.py | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/tf_slim/layers/layers_test.py b/tf_slim/layers/layers_test.py
+index 505df31..0aa91d3 100644
+--- a/tf_slim/layers/layers_test.py
++++ b/tf_slim/layers/layers_test.py
+@@ -1367,7 +1367,6 @@ class DropoutTest(test.TestCase):
+     with self.cached_session():
+       images = np.random.uniform(size=(5, height, width, 3))
+       output = _layers.dropout(images)
+-      self.assertEqual(output.op.name.lower(), 'dropout/dropout_1/mul_1')
+       output.get_shape().assert_is_compatible_with(
+           ops.convert_to_tensor(images).get_shape())
+ 
+-- 
+2.40.1
+
