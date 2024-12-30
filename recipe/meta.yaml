@@ -55,7 +55,7 @@ requirements:
     - setuptools
   run:
     - python >={{ python_min }}
-    - tensorflow >=2
+    - tensorflow >=2.13
   run_constrained:
     - keras <3.0a
 
