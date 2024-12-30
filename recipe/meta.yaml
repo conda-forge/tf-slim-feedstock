@@ -45,21 +45,23 @@ source:
 
 build:
   noarch: python
-  number: 0
+  number: 1
   script: {{ PYTHON }} -m pip install . -vv
 
 requirements:
   host:
-    - python >=3.7
+    - python {{ python_min }}
     - pip
     - setuptools
   run:
-    - python >=3.7
+    - python >={{ python_min }}
     - tensorflow >=2
   run_constrained:
     - keras <3.0a
 
 test:
+  requires:
+    - python {{ python_min }}
   imports:
     - tf_slim
 
